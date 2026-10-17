@@ -244,7 +244,7 @@ void HelloBanner() {
 int main() {
     system("cls");
     HelloBanner();
-
+    
  //   string text = "Now is t";
     uint64_t key = 0x0101010101010101; 
     uint64_t text_hex = 0x95F8A5E5DD31D900; 
