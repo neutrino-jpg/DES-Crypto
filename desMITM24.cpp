@@ -195,11 +195,9 @@ inline uint32_t rotl28(uint32_t x, int n) {
 }
 
 void RKeysGen(uint64_t CipherKey, uint64_t KeyArr[16]) {
-  
     uint64_t pc1_result = permute(CipherKey, 64, PC1, 56);
     uint32_t C = (uint32_t)(pc1_result >> 28) & 0x0FFFFFFF;
     uint32_t D = (uint32_t)(pc1_result) & 0x0FFFFFFF;
-    
     for (int i =0; i<16; i++) {
         C = rotl28(C, SHIFTS[i]);
         D = rotl28(D, SHIFTS[i]);
@@ -252,8 +250,12 @@ void HelloBanner() {
 //Расширение ключа для сохранения выбрасываемых битов
 uint64_t ExpandKey(uint32_t k, int N) {
     uint64_t out = 0;
-    for (int i = 0; i < 64; i += N) {
-        out = (out << N) | k;
+    int pos =0;
+    for (int i = 63; i >= 0 && pos < N; i--) {
+        if ((i%8)==0) continue;
+        int kb = (k >> (N - 1 - pos)) & 1;
+        if (kb) out |= (1ULL << i); 
+        pos++;
     }
     return out;
 }
@@ -330,6 +332,8 @@ int main() {
     cout << endl << "Text (P2): "; printWord(P2); 
     uint64_t K1 = ExpandKey(key1, N); //расширенные ключи
     uint64_t K2 = ExpandKey(key2, N); //расширеные ключи
+    cout << endl << "Expanded KEY1: "; printWord(K1);
+    cout << endl << "Expanded KEY2: "; printWord(K2);
     uint64_t C1 = DESencrypt(DESencrypt(P1, K1, Nr), K2, Nr);//1
     uint64_t C2 = DESencrypt(DESencrypt(P2, K1, Nr), K2, Nr);//2
     cout << endl << "Encrypted Text (C1): "; printWord(C1); //Формирование C1 и C2 (имитация перехваченных шифротекстов)
@@ -357,7 +361,7 @@ int main() {
     auto ms = chrono::duration_cast<chrono::milliseconds>(t1 - t0).count();
     cout << "Time: " << ms / 1000 << "." 
           << setw(3) << setfill('0') << ms % 1000 << " s\n";
-    cout << "Table size:" << table.size() << endl << endl;
+    cout << "Table size: " << table.size() << endl << endl;
     //сортировка для бинарного поиска
     std::sort(table.begin(), table.end(),
     [](const Entry& a, const Entry& b) {
@@ -366,7 +370,7 @@ int main() {
 
     int count = 0; //счетчик пар
     cout << "Step 2 - Formation of table M' (Decrypt C1 by all variations of k2)" << endl <<
-            "Search and for candidates and verifying them\n";
+    "         Search and for candidates and verifying them\n";
     cout << minus << minus << minus <<endl; 
     auto t2 = chrono::steady_clock::now();//засекаем
     for (uint32_t k2 = 0; k2 < (1u << N); k2++) {
@@ -387,18 +391,18 @@ int main() {
 
         if (it != table.end() && it->M == Mp) {
             uint32_t k1 = it->k1;
-            cout << endl << "Candidate found: "; printWord(k1); cout << ", "; printWord(k2);
+            cout << endl << "Candidate found: "; printWord(k1); cout << ", "; printWord(k2); cout << "                        "<< endl;
             Beep(1000, 300);
             // проверка на второй паре
             if (DESencrypt(DESencrypt(P2, ExpandKey(k1, 24), Nr), fullkey2, Nr) == C2) {
               cout << " - TRUE KEY!"; count +=1;
               Beep(1200, 200); Beep(1500,600);
+              break;
             }
         }
     }
     auto t3 = chrono::steady_clock::now();//засекаем
-    cout << "\rFilling: DONE                                       \n";
-    cout <<  ravno << ravno << endl 
+    cout <<  endl << ravno << ravno << endl 
     <<"ATACK FINISHED\nVariations of key-pairs found: " << count << endl;
     auto ms1 = chrono::duration_cast<chrono::milliseconds>(t3 - t0).count();
     cout << "Finally time: " << ms1 / 1000 << "." 
