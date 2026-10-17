@@ -391,11 +391,11 @@ int main() {
 
         if (it != table.end() && it->M == Mp) {
             uint32_t k1 = it->k1;
-            cout << endl << "Candidate found: "; printWord(k1); cout << ", "; printWord(k2); cout << "                        "<< endl;
+            cout << endl << "Candidate found: "; printWord(k1); cout << ", "; printWord(k2);
             Beep(1000, 300);
             // проверка на второй паре
             if (DESencrypt(DESencrypt(P2, ExpandKey(k1, 24), Nr), fullkey2, Nr) == C2) {
-              cout << " - TRUE KEY!"; count +=1;
+              cout << " - TRUE KEY!                             " << endl; count +=1;
               Beep(1200, 200); Beep(1500,600);
               break;
             }
